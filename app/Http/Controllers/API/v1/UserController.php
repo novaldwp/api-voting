@@ -3,11 +3,20 @@
 namespace App\Http\Controllers\API\v1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Users\CreateUserRequest;
+use App\Http\Requests\Users\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Services\UserService;
-use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    private $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -15,17 +24,9 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
-    }
+        $users = $this->userService->getUsers();
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
+        return $this->success("Successfully Retrieve Users", 200, UserResource::collection($users));
     }
 
     /**
@@ -34,9 +35,22 @@ class UserController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(CreateUserRequest $request)
     {
-        //
+        $data = [
+            'name'      => $request->name,
+            'email'     => $request->email,
+            'password'  => bcrypt($request->password)
+        ];
+
+        try {
+            $result = $this->userService->store($data);
+
+            return $this->success("Successfully Insert New User", 201, new UserResource($result));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
 
     /**
@@ -47,20 +61,15 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        //
-    }
+        try {
+            $result = $this->userService->getUserById($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
+            return $this->success("Successfully Get User", 200, new UserResource($result));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
-
     /**
      * Update the specified resource in storage.
      *
@@ -68,9 +77,22 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(UpdateUserRequest $request, $id)
     {
-        //
+        $data = [
+            'name'  => $request->name,
+            'email' => $request->email,
+            is_null($request->password) ?: 'password' => bcrypt($request->password)
+        ];
+
+        try {
+            $result = $this->userService->update($data, $id);
+
+            return $this->success("Successfully Update Current User", 200, new UserResource($result));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
 
     /**
@@ -81,6 +103,13 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        //
+        try {
+            $result = $this->userService->delete($id);
+
+            return $this->success("Successfully Delete User", 200, new UserResource($result));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
 }
