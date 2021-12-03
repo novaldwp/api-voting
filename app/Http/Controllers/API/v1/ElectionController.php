@@ -7,8 +7,6 @@ use App\Http\Requests\Election\CreateElectionRequest;
 use App\Http\Requests\Election\UpdateElectionRequest;
 use App\Http\Resources\ElectionResource;
 use App\Services\ElectionService;
-use Error;
-use Illuminate\Http\Request;
 
 class ElectionController extends Controller
 {
