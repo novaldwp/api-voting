@@ -34,7 +34,7 @@ class UserService {
     {
         if ($id != auth()->user()->id)
         {
-            throw new Exception ("Access Forbidden");
+            throw new Exception("Access Forbidden");
         }
 
         $this->_checkUserId($id);
@@ -72,7 +72,7 @@ class UserService {
 
         if (!$user)
         {
-            throw new Exception("User ID not found", 404);
+            throw new Exception("User ID not found");
         }
     }
 }

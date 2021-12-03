@@ -39,7 +39,7 @@ class Controller extends BaseController
      * @param  array|string|null  $data
      * @return \Illuminate\Http\JsonResponse
      */
-	public function error(string $message = null, int $code, $data = null)
+	public function error(string $message = null, int $code, $data = [])
 	{
 		return response()->json(
             [

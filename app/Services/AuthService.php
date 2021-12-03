@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Interfaces\UserRepositoryInterface;
-use Illuminate\Support\Facades\Hash;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 
