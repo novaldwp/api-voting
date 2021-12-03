@@ -74,7 +74,7 @@ class ElectionService {
             'name'          => $request->name,
             'start_date'    => date('Y-m-d', strtotime($request->start_date)),
             'end_date'      => date('Y-m-d', strtotime($request->end_date)),
-            !$request->hasFile('image') ?: 'image' => $this->upload($request->image, $this->path, $this->thumb, $election->image)
+            'image'         => $this->upload($request->image, $this->path, $this->thumb, $election->image)
         ];
 
         try {
