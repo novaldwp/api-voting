@@ -4,10 +4,19 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\File;
 use Intervention\Image\Facades\Image;
+use Exception;
 
 trait ImageTrait {
     public function upload($img, $path, $thumb, $oldImg = null)
     {
+        if (is_null($img) && !is_null($oldImg))
+        {
+            return $oldImg;
+        }
+        else {
+            throw new Exception("Error uploading image");
+        }
+
         // check directory
         if (!File::isDirectory($path))
         {
