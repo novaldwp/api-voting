@@ -109,7 +109,5 @@ class ElectionService {
         {
             throw new Exception("Election ID Not Found");
         }
-
-        return $election;
     }
 }
