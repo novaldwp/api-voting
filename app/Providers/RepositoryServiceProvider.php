@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Interfaces\CandidateRepositoryInterface;
 use App\Interfaces\ElectionRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
+use App\Repositories\CandidateRepository;
 use App\Repositories\ElectionRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
@@ -19,6 +21,7 @@ class RepositoryServiceProvider extends ServiceProvider
     {
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(ElectionRepositoryInterface::class, ElectionRepository::class);
+        $this->app->bind(CandidateRepositoryInterface::class, CandidateRepository::class);
     }
 
     /**
