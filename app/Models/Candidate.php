@@ -16,6 +16,7 @@ class Candidate extends Model
 
     public function elections()
     {
-        return $this->belongsToMany(Election::class, 'candidate_election', 'candidate_id', 'election_id');
+        return $this->belongsToMany(Election::class, 'candidate_election', 'candidate_id', 'election_id')
+            ->withTimestamps();
     }
 }

@@ -12,4 +12,9 @@ class Election extends Model
     protected $fillable = [
         'name', 'start_date', 'end_date', 'image'
     ];
+
+    public function candidates()
+    {
+        return $this->belongsTomany(Candidate::class, 'candidate_election', 'election_id', 'candidate_id')->withTimestamps();
+    }
 }
