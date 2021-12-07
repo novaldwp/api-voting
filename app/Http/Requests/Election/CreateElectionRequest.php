@@ -25,9 +25,10 @@ class CreateElectionRequest extends FormRequest
     {
         return [
             'name' => 'required|string|min:4',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
-            'image' => 'required|image|max:2048'
+            'start_date' => 'required|date|date_format:d-m-Y|after:today',
+            'end_date' => 'required|date|date_format:d-m-Y|after:today',
+            'image' => 'required|image|max:2048',
+            'candidate_id' => 'required|exists:candidates,id'
         ];
     }
 }
