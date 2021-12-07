@@ -16,7 +16,7 @@ class ElectionRepository implements ElectionRepositoryInterface {
 
     public function getElections()
     {
-        return $this->model->orderByDesc('end_date')->get();
+        return $this->model->with(['candidates'])->orderByDesc('end_date')->get();
     }
 
     public function getElectionById($id)
@@ -24,15 +24,19 @@ class ElectionRepository implements ElectionRepositoryInterface {
         return $this->model->find($id);
     }
 
-    public function store($data)
+    public function store($data, $candidates)
     {
-        return $this->model->create($data);
+        $election = $this->model->create($data);
+        $election->candidates()->attach($candidates);
+
+        return $election;
     }
 
-    public function update($data, $id)
+    public function update($data, $id, $candidates)
     {
         $election = $this->model->findOrFail($id);
         $election->update($data);
+        $election->candidates()->sync($candidates);
 
         return $election;
     }
@@ -41,6 +45,23 @@ class ElectionRepository implements ElectionRepositoryInterface {
     {
         $election = $this->model->findOrFail($id);
         $election->delete();
+        $election->candidates()->detach();
+
+        return $election;
+    }
+
+    public function getElectionByCandidateId($candidate_id, $election_id = null)
+    {
+        $now        = date('Y-m-d');
+        $election   = $this->model->where('end_date', '>=', $now)
+            ->with(['candidates'])
+            ->whereHas('candidates', function($q) use($candidate_id, $election_id) {
+                $q->when(!is_null($election_id), function($q) use($election_id) {
+                    $q->where('election_id', '!=', $election_id);
+                });
+                $q->where('candidate_id', '=', $candidate_id);
+            })
+            ->get();
 
         return $election;
     }

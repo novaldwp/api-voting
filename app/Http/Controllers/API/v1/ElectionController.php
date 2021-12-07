@@ -60,7 +60,6 @@ class ElectionController extends Controller
      */
     public function show($id)
     {
-        // return $this->electionService->getElectionById($id);
         try {
             $result = $this->electionService->getElectionById($id);
 
