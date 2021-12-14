@@ -22,13 +22,29 @@ class ElectionService {
         $this->thumb    = "uploads/images/elections/thumb/";
     }
 
+    /**
+     * Get All Elections
+     *
+     * @return collection
+     */
     public function getElections()
     {
-        $elections = $this->electionRepository->getElections();
+        try {
+            $elections = $this->electionRepository->getElections();
+        }
+        catch (Exception $e) {
+            throw new InvalidArgumentException("Unable to retrieve Elections");
+        }
 
         return $elections;
     }
 
+    /**
+     * Get Election By ID
+     *
+     * @param int $id
+     * @return array
+     */
     public function getElectionById($id)
     {
         try {
@@ -46,6 +62,12 @@ class ElectionService {
         return $election;
     }
 
+    /**
+     * Insert new Election
+     *
+     * @param object $request
+     * @return array
+     */
     public function store($request)
     {
         $start_date = strtotime($request->start_date);
@@ -58,7 +80,7 @@ class ElectionService {
         $candidates = [];
         for ($i = 0; $i < $countCandidate; $i++)
         {
-            $this->_checkCandidateIsStillParticipateElection($request->candidate_id[$i]);
+            $this->_checkCandidateIsParticipateInElection($request->candidate_id[$i]);
             array_push($candidates, $request->candidate_id[$i]);
         }
 
@@ -79,6 +101,13 @@ class ElectionService {
         return $election;
     }
 
+    /**
+     * Update Election by ID
+     *
+     * @param object $request
+     * @param id $election_id
+     * @return array
+     */
     public function update($request, $election_id)
     {
         $this->_checkElectionId($election_id);
@@ -93,7 +122,7 @@ class ElectionService {
         $candidates = [];
         for ($i = 0; $i < $countCandidate; $i++)
         {
-            $this->_checkCandidateIsStillParticipateElection($request->candidate_id[$i], $election_id);
+            $this->_checkCandidateIsParticipateInElection($request->candidate_id[$i], $election_id);
             array_push($candidates, $request->candidate_id[$i]);
         }
 
@@ -119,6 +148,12 @@ class ElectionService {
         return $result;
     }
 
+    /**
+     * Delete Election by ID
+     *
+     * @param int $id
+     * @return bool
+     */
     public function delete($id)
     {
         $this->_checkElectionId($id);
@@ -133,6 +168,12 @@ class ElectionService {
         return $result;
     }
 
+    /**
+     * Check Election ID is exist
+     *
+     * @param int $id
+     * @throws exception
+     */
     public function _checkElectionId($id)
     {
         $election = $this->electionRepository->getElectionById($id);
@@ -143,6 +184,13 @@ class ElectionService {
         }
     }
 
+    /**
+     * Check if date diff greater than 3 days
+     *
+     * @param [date] $start
+     * @param [date] $end
+     * @throws exception
+     */
     public function _checkDateElection($start, $end)
     {
         $diff = ($end - $start) / 60 / 60 / 24;
@@ -153,6 +201,12 @@ class ElectionService {
         }
     }
 
+    /**
+     * Total registered candidate should be greater than equal 2
+     *
+     * @param int $count
+     * @throws exception
+     */
     public function _checkTotalCandidates($count)
     {
         if ($count < 2)
@@ -161,13 +215,30 @@ class ElectionService {
         }
     }
 
-    public function _checkCandidateIsStillParticipateElection($candidate_id, $election_id = null)
+    /**
+     * Check is candidate participate on selected election
+     *
+     * @param int $candidate_id
+     * @param int $election_id
+     * @throws Exception
+     */
+    public function _checkCandidateIsParticipateInElection($candidate_id, $election_id = null, $model = "election")
     {
-        $result = $this->electionRepository->getElectionByCandidateId($candidate_id, $election_id);
+        $result = $this->electionRepository->getElectionByCandidateIdElectionId($candidate_id, $election_id, $model);
 
-        if (count($result) != 0)
+        if ($model == "election")
         {
-            throw new Exception("Candidate still participate in other election");
+            if (count($result) > 0) // if model election find candidate who still participate in other election
+            {
+                throw new Exception("Candidate still participate in other on-going election"); // throw error message
+            }
+        }
+        else if ($model == "voting")
+        {
+            if (count($result) == 0) // if model voting can't find candidate, it mean selected candidate not participate in current election
+            {
+                throw new Exception("Candidate is not participate in selected Election"); // throw error message
+            }
         }
     }
 }
