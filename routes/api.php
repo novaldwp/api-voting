@@ -4,6 +4,7 @@ use App\Http\Controllers\API\v1\AuthController;
 use App\Http\Controllers\API\v1\CandidateController;
 use App\Http\Controllers\API\v1\ElectionController;
 use App\Http\Controllers\API\v1\UserController;
+use App\Http\Controllers\API\v1\VotingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,7 @@ Route::prefix('v1')->group(function() {
         Route::resource('/users', UserController::class)->except(['create', 'edit']);
         Route::resource('/elections', ElectionController::class)->except(['create', 'edit']);
         Route::resource('/candidates', CandidateController::class)->except(['create', 'edit']);
+        Route::resource('/votings', VotingController::class)->except(['create', 'edit']);
     });
 
     Route::post('/login', [AuthController::class, 'login']);
