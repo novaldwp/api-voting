@@ -7,6 +7,7 @@ use App\Http\Requests\Users\CreateUserRequest;
 use App\Http\Requests\Users\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Services\UserService;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -29,6 +30,22 @@ class UserController extends Controller
         return $this->success("Successfully Retrieve Users", 200, UserResource::collection($users));
     }
 
+    public function paginate(Request $request)
+    {
+        $type       = $request->type;
+        $typeString = ($type == 0) ? "Participants":"Users";
+        $limit      = $request->limit;
+
+        try {
+            $result = $this->userService->getPaginateUsers($type, $limit);
+
+            return $this->success("Successfully retrieve " . $typeString, 200, UserResource::collection($result)->response()->getData(true));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -37,16 +54,10 @@ class UserController extends Controller
      */
     public function store(CreateUserRequest $request)
     {
-        $data = [
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'password'  => bcrypt($request->password)
-        ];
-
         try {
-            $result = $this->userService->store($data);
+            $result = $this->userService->store($request);
 
-            return $this->success("Successfully Insert New User", 201, new UserResource($result));
+            return $this->success("Successfully Insert New User", 201);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
@@ -79,16 +90,10 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, $id)
     {
-        $data = [
-            'name'  => $request->name,
-            'email' => $request->email,
-            is_null($request->password) ?: 'password' => bcrypt($request->password)
-        ];
-
         try {
-            $result = $this->userService->update($data, $id);
+            $result = $this->userService->update($request, $id);
 
-            return $this->success("Successfully Update Current User", 200, new UserResource($result));
+            return $this->success("Successfully Update Current User", 200);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
@@ -106,7 +111,7 @@ class UserController extends Controller
         try {
             $result = $this->userService->delete($id);
 
-            return $this->success("Successfully Delete User", 200, new UserResource($result));
+            return $this->success("Successfully Delete User", 200);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);

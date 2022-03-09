@@ -24,11 +24,11 @@ class CreateElectionRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|min:4',
-            'start_date' => 'required|date|date_format:d-m-Y|after:today',
-            'end_date' => 'required|date|date_format:d-m-Y|after:today',
-            'image' => 'required|image|max:2048',
-            'candidate_id' => 'required|exists:candidates,id'
+            'name'          => 'required|string|min:4',
+            'start_date'    => 'required|date|after:today',
+            'end_date'      => 'required|date|after:start_date',
+            'image'         => 'required|image|mimes:jpg,png,jpeg,gif,svg',
+            'candidate_id'  => 'required|exists:candidates,id'
         ];
     }
 }

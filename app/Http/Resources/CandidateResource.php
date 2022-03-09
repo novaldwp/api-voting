@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\ElectionResource;
 
 class CandidateResource extends JsonResource
 {
@@ -16,15 +17,18 @@ class CandidateResource extends JsonResource
     {
         return [
             'id'            => $this->id,
+            'full_name'     => $this->first_name . ' ' . $this->last_name,
             'first_name'    => $this->first_name,
             'last_name'     => $this->last_name,
             'email'         => $this->email,
             'phone'         => $this->phone,
-            'dob'           => date('d-m-Y', strtotime($this->dob)),
+            'dob'           => $this->dob,
+            'dobb'          => date('d-m-Y', strtotime($this->dob)),
             'address'       => $this->address,
             'vision'        => $this->vision,
             'mission'       => $this->mission,
-            'elections'     => $this->elections
+            'thumbnail'     => asset('uploads/images/'. ($this->image == "" ? 'no_image.png':"candidates/thumb/".$this->image)),
+            'image'         => asset('uploads/images/'. ($this->image == "" ? 'no_image.png':"candidates/".$this->image)),
         ];
     }
 }

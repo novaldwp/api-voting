@@ -35,6 +35,25 @@ class CandidateController extends Controller
     }
 
     /**
+     * Display a listing of the resource using paginate
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function paginate(Request $request)
+    {
+        $limit = $request->limit; // limit per page
+
+        try {
+            $result = $this->candidateService->getPaginateCandidates($limit);
+
+            return $this->success("Successfully retrieve candidates", 200, CandidateResource::collection($result)->response()->getData(true));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -45,7 +64,7 @@ class CandidateController extends Controller
         try {
             $result = $this->candidateService->store($request);
 
-            return $this->success("Successfully insert new candidate", 201, new CandidateResource($result));
+            return $this->success("Successfully insert new candidate", 201);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
@@ -63,7 +82,7 @@ class CandidateController extends Controller
         try {
             $result = $this->candidateService->getCandidateById($id);
 
-            return $this->success("Successfully get candidate", 200, new CandidateResource($result));
+            return $this->success("Successfully get candidate", 200, $result);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 404);
@@ -82,7 +101,7 @@ class CandidateController extends Controller
         try {
             $result = $this->candidateService->update($request, $id);
 
-            return $this->success("Successfully update candidate", 200, new CandidateResource($result));
+            return $this->success("Successfully update candidate", 200);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);

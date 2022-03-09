@@ -25,9 +25,8 @@ class UpdateElectionRequest extends FormRequest
     {
         return [
             'name' => 'required|string|min:4',
-            'start_date' => 'required|date|date_format:d-m-Y|after:today',
-            'end_date' => 'required|date|date_format:d-m-Y|after:today',
-            'image' => 'image|max:2048',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
             'candidate_id' => 'required|exists:candidates,id'
         ];
     }

@@ -5,6 +5,7 @@ namespace App\Interfaces;
 interface CandidateRepositoryInterface {
 
     public function getCandidates();
+    public function getPaginateCandidates($limit);
     public function getCandidateById($id);
     public function getCandidateByElectionId($election_id);
     public function store($data);

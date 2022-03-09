@@ -12,14 +12,15 @@ class ElectionService {
     use ImageTrait;
 
     private $electionRepository;
+    private $candidateService;
     private $path;
     private $thumb;
 
     public function __construct(ElectionRepositoryInterface $electionRepository)
     {
         $this->electionRepository = $electionRepository;
-        $this->path     = "uploads/images/elections/";
-        $this->thumb    = "uploads/images/elections/thumb/";
+        $this->path               = "uploads/images/elections/";
+        $this->thumb              = "uploads/images/elections/thumb/";
     }
 
     /**
@@ -27,16 +28,76 @@ class ElectionService {
      *
      * @return collection
      */
-    public function getElections()
+    public function getElections($flag = null)
     {
         try {
-            $elections = $this->electionRepository->getElections();
+            $elections = $this->electionRepository->getElections($flag);
         }
         catch (Exception $e) {
             throw new InvalidArgumentException("Unable to retrieve Elections");
         }
 
         return $elections;
+    }
+
+    public function getElectionWithTotalParticipant()
+    {
+        try {
+            $result = $this->electionRepository->getElectionWithTotalParticipant();
+
+        }
+        catch (\Throwable $th) {
+            throw new Exception("Unable to get data Elections");
+        }
+
+        return $result;
+    }
+
+    public function getPaginateElections($limit)
+    {
+        try {
+
+            $result = $this->electionRepository->getPaginateElections($limit);
+        }
+        catch (\Exception $e) {
+            throw new Exception("Unable to get Elections");
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get voting recapitulation by election_id
+     *
+     * @param int $election_id
+     *
+     * @return collection
+     */
+    public function getVotingRecapitulationByElectionId($election_id)
+    {
+        $this->_checkElectionId($election_id);
+
+        try {
+            $votingOverview['candidates']  = [];
+            $votingOverview['totalVoting'] = [];
+            $data = $this->electionRepository->getVotingRecapitulationByElectionId($election_id);
+
+            foreach($data->candidates as $candidate) {
+                array_push($votingOverview['candidates'], $candidate->first_name . ' ' . $candidate->last_name);
+                array_push($votingOverview['totalVoting'], $candidate->votings[0]->voting_gain);
+            }
+
+            $result = [
+                'id'    => $data->id,
+                'name'  => $data->name
+            ];
+            $result['votingOverview'] = $votingOverview;
+        }
+        catch (\Exception $e) {
+            throw new Exception("Unable to get voting recapitulations");
+        }
+
+        return $result;
     }
 
     /**
@@ -47,25 +108,61 @@ class ElectionService {
      */
     public function getElectionById($id)
     {
-        try {
-            $election = $this->electionRepository->getElectionById($id);
+        $result  = [];
+        $user_id = auth()->user()->role == "voter" ? auth()->user()->id : "";
 
-            if (is_null($election))
+        try {
+            $data   = $this->electionRepository->getElectionById($id, $user_id);
+            $result = [
+                'id'            => $data->id,
+                'name'          => $data->name,
+                'start_date'    => $data->start_date,
+                'end_date'      => $data->end_date,
+                'start_datee'   => date('d-m-Y', strtotime($data->start_date)),
+                'end_datee'     => date('d-m-Y', strtotime($data->end_date)),
+                'thumbnail'     => asset('uploads/images/'. ($data->image == "" ? 'no_image.png':"elections/thumb/".$data->image)),
+                'image'         => asset('uploads/images/'. ($data->image == "" ? 'no_image.png':"elections/".$data->image)),
+                'candidates_id' => []
+            ];
+
+            $candidates     = $data->candidates;
+
+            for($i = 0; $i < count($candidates); $i++) {
+                $result['candidates'][$i] = [
+                    'id'         => $candidates[$i]->id,
+                    'full_name'  => $candidates[$i]->first_name . ' ' . $candidates[$i]->last_name,
+                    'vision'     => $candidates[$i]->vision,
+                    'mission'    => $candidates[$i]->mission,
+                    'thumbnail'  => asset('uploads/images/'. ($candidates[$i]->image == "" ? 'no_image.png':"candidates/thumb/".$candidates[$i]->image)),
+                    'image'      => asset('uploads/images/'. ($candidates[$i]->image == "" ? 'no_image.png':"candidates/".$candidates[$i]->image))
+                ];
+
+                array_push($result['candidates_id'], $candidates[$i]->id);
+            }
+
+            if (count($data->votings) != 0) {
+                $result['votings']['id'] = $data->votings[0]->id;
+                $result['votings']['candidate_id'] = $data->votings[0]->candidate_id;
+
+            }
+
+            if (is_null($data))
             {
-                throw new Exception("Election ID Not Found");
+                throw new Exception("Data Election Not Found");
             }
         }
         catch (\Exception $e) {
-            throw new Exception("Election ID Not Found");
+            throw new Exception("Data Election Not Found");
         }
 
-        return $election;
+        return $result;
     }
 
     /**
      * Insert new Election
      *
      * @param object $request
+     *
      * @return array
      */
     public function store($request)
@@ -74,13 +171,15 @@ class ElectionService {
         $end_date   = strtotime($request->end_date);
         $this->_checkDateElection($start_date, $end_date);
 
+        // check if string given, not array
+        $request->candidate_id = !is_array($request->candidate_id) ? explode(",", $request->candidate_id) : $request->candidate_id;
+
         $countCandidate = count($request->candidate_id);
         $this->_checkTotalCandidates($countCandidate);
 
         $candidates = [];
         for ($i = 0; $i < $countCandidate; $i++)
         {
-            $this->_checkCandidateIsParticipateInElection($request->candidate_id[$i]);
             array_push($candidates, $request->candidate_id[$i]);
         }
 
@@ -106,15 +205,22 @@ class ElectionService {
      *
      * @param object $request
      * @param id $election_id
+     *
      * @return array
      */
     public function update($request, $election_id)
     {
         $this->_checkElectionId($election_id);
 
+        $election   = $this->electionRepository->getElectionById($election_id);
         $start_date = strtotime($request->start_date);
         $end_date   = strtotime($request->end_date);
+
         $this->_checkDateElection($start_date, $end_date);
+        $this->_checkUpdatingStartDate(strtotime($election->start_date), $start_date);
+
+        // check if string given, not array
+        $request->candidate_id = !is_array($request->candidate_id) ? explode(",", $request->candidate_id) : $request->candidate_id;
 
         $countCandidate = count($request->candidate_id);
         $this->_checkTotalCandidates($countCandidate);
@@ -122,11 +228,9 @@ class ElectionService {
         $candidates = [];
         for ($i = 0; $i < $countCandidate; $i++)
         {
-            $this->_checkCandidateIsParticipateInElection($request->candidate_id[$i], $election_id);
             array_push($candidates, $request->candidate_id[$i]);
         }
 
-        $election   = $this->electionRepository->getElectionById($election_id);
         $data       = [
             'name'          => $request->name,
             'start_date'    => date('Y-m-d', $start_date),
@@ -160,6 +264,7 @@ class ElectionService {
 
         try {
             $result = $this->electionRepository->delete($id);
+            $this->deleteImageFromDirectory($result->image, $this->path, $this->thumb);
         }
         catch (\Exception $e) {
             throw new InvalidArgumentException("Unable to delete election");
@@ -193,7 +298,7 @@ class ElectionService {
      */
     public function _checkDateElection($start, $end)
     {
-        $diff = ($end - $start) / 60 / 60 / 24;
+        $diff = ($end - $start) / 60 / 60 / 24; // minute, second, hours
 
         if ($diff < 3)
         {
@@ -216,29 +321,16 @@ class ElectionService {
     }
 
     /**
-     * Check is candidate participate on selected election
+     * current start date shouldn't less than old start date
      *
-     * @param int $candidate_id
-     * @param int $election_id
-     * @throws Exception
+     * @param int $oldStartDate
+     * @param int $newStartDate
+     * @throws exception
      */
-    public function _checkCandidateIsParticipateInElection($candidate_id, $election_id = null, $model = "election")
+    public function _checkUpdatingStartDate($oldStartDate, $newStartDate)
     {
-        $result = $this->electionRepository->getElectionByCandidateIdElectionId($candidate_id, $election_id, $model);
-
-        if ($model == "election")
-        {
-            if (count($result) > 0) // if model election find candidate who still participate in other election
-            {
-                throw new Exception("Candidate still participate in other on-going election"); // throw error message
-            }
-        }
-        else if ($model == "voting")
-        {
-            if (count($result) == 0) // if model voting can't find candidate, it mean selected candidate not participate in current election
-            {
-                throw new Exception("Candidate is not participate in selected Election"); // throw error message
-            }
+        if ($oldStartDate > $newStartDate) {
+            throw new Exception("New start date can't be less than current start date");
         }
     }
 }

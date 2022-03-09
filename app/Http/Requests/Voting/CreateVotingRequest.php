@@ -24,7 +24,6 @@ class CreateVotingRequest extends FormRequest
     public function rules()
     {
         return [
-            'user_id'       => 'required|exists:users,id',
             'candidate_id'  => 'required|exists:candidates,id',
             'election_id'   => 'required|exists:elections,id'
         ];

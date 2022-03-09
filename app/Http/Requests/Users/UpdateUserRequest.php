@@ -25,6 +25,7 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name'      => 'required|string',
+            'phone'     => 'required|min:11',
             'email'     => 'required|email|unique:users,email,'.$this->user // karena di route nulisnya user_id bukan id
         ];
     }

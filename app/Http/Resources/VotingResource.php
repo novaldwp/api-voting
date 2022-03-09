@@ -14,6 +14,13 @@ class VotingResource extends JsonResource
      */
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            'id'            => $this->id,
+            'created_at'    => $this->created_at,
+            'created_att'   => date('d-m-Y H:i:s', strtotime($this->created_at)),
+            'users'         => $this->users,
+            'candidates'    => $this->candidates,
+            'elections'     => $this->elections
+        ];
     }
 }

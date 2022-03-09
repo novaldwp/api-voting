@@ -33,4 +33,12 @@ trait ImageTrait {
 
         return $imageName;
     }
+
+    public function deleteImageFromDirectory($img, $path, $thumb)
+    {
+        if (!is_null($img)) {
+            File::delete($path . $img);
+            File::delete($thumb . $img);
+        }
+    }
 }

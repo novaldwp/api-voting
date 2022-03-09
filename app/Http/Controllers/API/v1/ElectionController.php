@@ -7,6 +7,7 @@ use App\Http\Requests\Election\CreateElectionRequest;
 use App\Http\Requests\Election\UpdateElectionRequest;
 use App\Http\Resources\ElectionResource;
 use App\Services\ElectionService;
+use Illuminate\Http\Request;
 
 class ElectionController extends Controller
 {
@@ -16,18 +17,63 @@ class ElectionController extends Controller
     {
         $this->electionService = $electionService;
     }
-
+    public function getElectionWithTotalParticipant()
+    {
+        return $this->electionService->getElectionWithTotalParticipant();
+    }
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
+        $perPage = $request->per_page;
+
         try {
-            $result = $this->electionService->getElections();
+            $result = $this->electionService->getElections($perPage);
 
             return $this->success("Successfully retrieve elections", 200, ElectionResource::collection($result));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Display a listing of the resource using paginate
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function paginate(Request $request)
+    {
+        $limit  = $request->limit; // limit per page
+
+        try {
+            $result = $this->electionService->getPaginateElections($limit);
+
+            return $this->success("Successfully retrieve elections", 200, ElectionResource::collection($result)->response()->getData(true));
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get voting recapitulation by election_id
+     *
+     * @param int $election_id
+     *
+     * @return object
+     */
+    public function getVotingRecapitulation($election_id)
+    {
+        // $result = $this->electionService->getVotingRecapitulationByElectionId($election_id);
+        // return $result;
+        try {
+            $result = $this->electionService->getVotingRecapitulationByElectionId($election_id);
+
+            return $this->success("Successfully retrieve voting recapitulation", 200, $result);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
@@ -42,10 +88,13 @@ class ElectionController extends Controller
      */
     public function store(CreateElectionRequest $request)
     {
+        $result = $this->electionService->store($request);
+
+        return $result;
         try {
             $result = $this->electionService->store($request);
 
-            return $this->success("Successfully Insert New Election", 201, new ElectionResource($result));
+            return $this->success("Successfully Insert New Election", 201);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);
@@ -82,7 +131,7 @@ class ElectionController extends Controller
         try {
             $result = $this->electionService->update($request, $id);
 
-            return $this->success("Successfully update election", 200, $result);
+            return $this->success("Successfully update election", 200);
         }
         catch (\Exception $e) {
             return $this->error($e->getMessage(), 500);

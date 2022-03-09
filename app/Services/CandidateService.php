@@ -3,16 +3,23 @@
 namespace App\Services;
 
 use App\Interfaces\CandidateRepositoryInterface;
+use App\Traits\ImageTrait;
 use Exception;
 
 class CandidateService {
 
+    use ImageTrait;
+
     private $candidateRepository;
     private $electionService;
+    private $path;
+    private $thumb;
 
     public function __construct(CandidateRepositoryInterface $candidateRepository, ElectionService $electionService)
     {
-        $this->candidateRepository = $candidateRepository;
+        $this->path                 = "uploads/images/candidates/";
+        $this->thumb                = "uploads/images/candidates/thumb/";
+        $this->candidateRepository  = $candidateRepository;
         $this->electionService = $electionService;
     }
 
@@ -20,7 +27,21 @@ class CandidateService {
     {
         try {
             $result = $this->candidateRepository->getCandidates();
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
+            throw new Exception("Unable to get Candidates");
+        }
+
+        return $result;
+    }
+
+    public function getPaginateCandidates($limit)
+    {
+        try {
+
+            $result = $this->candidateRepository->getPaginateCandidates($limit);
+        }
+        catch (\Exception $e) {
             throw new Exception("Unable to get Candidates");
         }
 
@@ -29,11 +50,48 @@ class CandidateService {
 
     public function getCandidateById($id)
     {
+        $result = [];
+
         try {
-            $result = $this->candidateRepository->getCandidateById($id);
+            $data   = $this->candidateRepository->getCandidateById($id);
+            $result = [
+                'id'         => $data->id,
+                'first_name' => $data->first_name,
+                'last_name'  => $data->last_name,
+                'full_name'  => $data->first_name . ' ' . $data->last_name,
+                'email'      => $data->email,
+                'phone'      => $data->phone,
+                'dob'        => $data->dob,
+                'dobb'       => date('d-m-Y', strtotime($data->dob)),
+                'address'    => $data->address,
+                'vision'     => $data->vision,
+                'mission'    => $data->mission,
+                'thumbnail'  => asset('uploads/images/'. ($data->image == "" ? 'no_image.png':"candidates/thumb/".$data->image)),
+                'image'      => asset('uploads/images/'. ($data->image == "" ? 'no_image.png':"candidates/".$data->image)),
+                'elections'  => $data->elections
+            ];
+
+            $elections = $data->elections;
+            if (count($elections) != 0)
+            {
+                for ($i = 0; $i < count($elections); $i++)
+                {
+                    $result['elections'][$i] = [
+                        'id'         => $elections[$i]->id,
+                        'name'       => $elections[$i]->name,
+                        'start_date' => date('d-m-Y', strtotime($elections[$i]->start_date)),
+                        'end_date'   => date('d-m-Y', strtotime($elections[$i]->end_date)),
+                        'thumbnail'  => asset('uploads/images/'. ($elections[$i]->image == "" ? 'no_image.png':"elections/thumb/".$elections[$i]->image)),
+                        'image'      => asset('uploads/images/'. ($elections[$i]->image == "" ? 'no_image.png':"elections/".$elections[$i]->image)),
+                    ];
+                }
+            }
+            else {
+                $result['elections'] = [];
+            }
         }
         catch (\Exception $e) {
-            throw new Exception("Candidate ID Not Found");
+            return $e->getMessage();
         }
 
         return $result;
@@ -53,9 +111,6 @@ class CandidateService {
 
     public function store($request)
     {
-        $election_id = $request->election_id;
-        $this->electionService->_checkElectionId($election_id);
-
         $data = [
             'first_name'    => $request->first_name,
             'last_name'     => $request->last_name,
@@ -64,7 +119,8 @@ class CandidateService {
             'dob'           => date('Y-m-d', strtotime($request->dob)),
             'address'       => strip_tags($request->address),
             'vision'        => $request->vision,
-            'mission'       => $request->mission
+            'mission'       => $request->mission,
+            'image'         => $this->upload($request->image, $this->path, $this->thumb)
         ];
 
         try {
@@ -79,9 +135,12 @@ class CandidateService {
 
     public function update($request, $id)
     {
-        $election_id = $request->election_id;
-        $this->_checkCandidateId($id);
-        $this->electionService->_checkElectionId($election_id);
+        $candidate = $this->candidateRepository->getCandidateById($id);
+
+        if (!$candidate)
+        {
+            throw new Exception("Candidate Not Found");
+        }
 
         $data = [
             'first_name'    => $request->first_name,
@@ -93,6 +152,12 @@ class CandidateService {
             'vision'        => $request->vision,
             'mission'       => $request->mission
         ];
+
+        if ($request->hasFile('image'))
+        {
+            $data['image'] = $this->upload($request->image, $this->path, $this->thumb, $candidate->image);
+        }
+
         try {
             $result = $this->candidateRepository->update($data, $id);
         }
@@ -109,6 +174,7 @@ class CandidateService {
 
         try {
             $result = $this->candidateRepository->delete($id);
+            $this->deleteImageFromDirectory($result->image, $this->path, $this->thumb);
         }
         catch (\Exception $e) {
             throw new Exception("Unable to delete data");

@@ -25,12 +25,13 @@ class CreateCandidateRequest extends FormRequest
     {
         return [
             'first_name'    => 'required|string',
-            'email'         => 'required|email',
-            'phone'         => 'required|numeric|min:11',
+            'email'         => 'required|email|unique:candidates,email',
+            'phone'         => 'required|numeric|min:11|unique:candidates,phone',
             'dob'           => 'required|date',
             'address'       => 'required|min:6',
             'vision'        => 'required',
-            'mission'       => 'required'
+            'mission'       => 'required',
+            'image'         => 'required|image|mimes:jpg,jpeg,png,gif,svg'
         ];
     }
 }

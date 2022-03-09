@@ -25,9 +25,15 @@ class AuthService {
 
         }
 
+        $data = [
+            'name'  => $user->name,
+            'email' => simple_encrypt($user->email),
+            'role'  => $user->role
+        ];
+
         $result = [
-            'email' => Auth::user()->email,
-            'token' => Auth::user()->createToken('this is secret key')->plainTextToken
+            'token' => Auth::user()->createToken('this is secret key')->plainTextToken,
+            'user'  => $data
         ];
 
         return $result;
@@ -36,7 +42,5 @@ class AuthService {
     public function logout()
     {
         return auth('sanctum')->user()->tokens()->delete();
-
-        return auth()->user();
     }
 }

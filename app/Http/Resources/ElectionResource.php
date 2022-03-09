@@ -19,9 +19,11 @@ class ElectionResource extends JsonResource
             'name'          => $this->name,
             'start_date'    => $this->start_date,
             'end_date'      => $this->end_date,
-            'thumbnail'     => asset('uploads/images/elections/thumb/'. $this->image),
-            'image'         => asset('uploads/images/elections/'. $this->image),
-            'candidates'    => $this->candidates
+            'start_datee'   => date('d-m-Y', strtotime($this->start_date)),
+            'end_datee'     => date('d-m-Y', strtotime($this->end_date)),
+            'thumbnail'     => asset('uploads/images/'. ($this->image == "" ? 'no_image.png':"elections/thumb/".$this->image)),
+            'image'         => asset('uploads/images/'. ($this->image == "" ? 'no_image.png':"elections/".$this->image)),
+            'status'        => $this->status
         ];
     }
 }

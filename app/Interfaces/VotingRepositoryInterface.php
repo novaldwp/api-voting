@@ -5,6 +5,7 @@ namespace App\Interfaces;
 interface VotingRepositoryInterface {
 
     public function getVotings();
+    public function getPaginateVotings($limit, $flag, $user_id);
     public function getVotingById($voting_id);
     public function getVotingByCandidateId($candidate_id);
     public function getVotingByElectionId($election_id);
