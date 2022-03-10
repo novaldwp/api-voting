@@ -17,9 +17,17 @@ class ElectionController extends Controller
     {
         $this->electionService = $electionService;
     }
+
     public function getElectionWithTotalParticipant()
     {
-        return $this->electionService->getElectionWithTotalParticipant();
+        try {
+            $result = $this->electionService->getElectionWithTotalParticipant();
+
+            return $this->success("Successfully retrieve elections with total Participant", 200, $result);
+        }
+        catch (\Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
     }
     /**
      * Display a listing of the resource.
@@ -68,8 +76,6 @@ class ElectionController extends Controller
      */
     public function getVotingRecapitulation($election_id)
     {
-        // $result = $this->electionService->getVotingRecapitulationByElectionId($election_id);
-        // return $result;
         try {
             $result = $this->electionService->getVotingRecapitulationByElectionId($election_id);
 
